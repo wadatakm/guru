@@ -130,7 +130,8 @@
     ・候補が<b>1つに絞れたら「設定◯ 確定」</b>、複数残れば「濃厚」と表示<br>
     ・<b>確定</b>＝否定や濃厚が論理的に1点を指す状態（グールの"濃厚"示唆を信頼した実質確定）<br>
     ・グールは<b>高設定示唆＋否定型</b>。「低設定の直接示唆」はほぼ無いので、低設定は<b>高示唆ナシ＋頻度が低い</b>で読む（チェックに低項目が無いのは正常）<br>
-    ・<b>頻度</b>はサンプルが少ないとブレる（参考）。エピボは中段チェリー始動を除外。トロフィーは店長カスタム注意。数値はちょんぼりすた現解析値
+    ・<b>頻度</b>はサンプルが少ないとブレる（参考）。エピボは中段チェリー始動を除外。トロフィーは店長カスタム注意。数値はちょんぼりすた現解析値<br>
+    ・入力は<b>自動保存</b>されます（アプリを閉じても残る／台移動時は<b>全リセット</b>で消す）
   </div>
   <footer>個人用 設定判別ツール v2 ／ 出典：ちょんぼりすた</footer>
 </div>
@@ -258,6 +259,7 @@ function calc(){
         nou:document.getElementById('rNou').textContent,
         shi:document.getElementById('rShi').textContent,
         hon:hon, alive:alive.slice(), nouko:nouko.slice(), denies:[...denies].sort()};
+  save();
 }
 function outText(){
   var d=new Date(),p=function(n){return(n<10?'0':'')+n;};
@@ -301,7 +303,9 @@ function resetAll(){
   if(hasData){ob.value=last;ob.style.display='block';msg.textContent='リセットしました（直前の結果を下に保存。コピーで復元できます）';}
   else{ob.value='';ob.style.display='none';msg.textContent='';}
 }
-calc();
+function save(){try{var ck=[];document.querySelectorAll('#checks input:checked').forEach(function(x){ck.push(x.id);});localStorage.setItem('guru_judge_v1',JSON.stringify({tg:document.getElementById('tg').value,c:c,ck:ck}));}catch(e){}}
+function load(){try{var raw=localStorage.getItem('guru_judge_v1');if(!raw)return;var data=JSON.parse(raw);if(data.tg!=null)document.getElementById('tg').value=data.tg;if(data.c){c.ep=data.c.ep||0;c.oo=data.c.oo||0;c.cz=data.c.cz||0;c.c1=data.c.c1||0;}['ep','oo','cz','c1'].forEach(function(k){document.getElementById(k).textContent=c[k];});if(data.ck){data.ck.forEach(function(id){var el=document.getElementById(id);if(el)el.checked=true;});}}catch(e){}}
+load();calc();
 </script>
 </body>
 </html>
