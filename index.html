@@ -92,6 +92,9 @@
     <p class="sdesc">総Gと回数から「設定◯相当」を表示。サンプルが少ないと判定外。</p>
     <div class="card">
       <div class="grow"><label>総ゲーム数</label><input id="tg" type="number" inputmode="numeric" placeholder="例 5000" oninput="calc()"></div>
+      <div class="sublbl">AT初当り＝通常時からATに当たった回数（連チャン・引き戻しは数えない）。設定差大：設定1=1/394→設定6=1/261</div>
+      <div class="ctr"><div class="info"><div class="nm">AT初当り（合算）</div><div class="verdict" id="vAt">—</div></div>
+        <div class="pad"><button onclick="step('at',-1)">−</button><span class="val" id="at">0</span><button class="plus" onclick="step('at',1)">＋</button></div></div>
       <div class="ctr"><div class="info"><div class="nm">エピボ回数</div><div class="verdict" id="vEp">—</div></div>
         <div class="pad"><button onclick="step('ep',-1)">−</button><span class="val" id="ep">0</span><button class="plus" onclick="step('ep',1)">＋</button></div></div>
       <div class="ctr"><div class="info"><div class="nm">大喰いの利世 回数</div><div class="verdict" id="vOo">—</div></div>
@@ -141,6 +144,7 @@ const EP={1:6620,2:5880,3:5115,4:4063,5:3167,6:2640};
 const OO={1:2079,2:1907,3:1723,4:1479,5:1227,6:1075};
 const CZ100={1:19.6,2:21.0,3:23.2,4:26.4,5:32.0,6:36.0};
 const CZG={1:262.6,2:255.6,3:246.5,4:233.1,5:216.4,6:203.7};
+const AT={1:394.4,2:380.5,3:357.0,4:325.9,5:291.2,6:261.3};
 const CHECKS=[
  {g:'AT終了画面',items:[
    {t:'神代利世',d:'設定1否定',tier:'k',deny:1},
@@ -176,7 +180,7 @@ const CHECKS=[
    {t:'金カード',d:'高設定濃厚',tier:'s',lean:2},
    {t:'虹カード',d:'設定6',tier:'n',s6:1}]}
 ];
-var c={ep:0,oo:0,cz:0,c1:0};
+var c={ep:0,oo:0,cz:0,c1:0,at:0};
 var LAST={alive:[],nouko:[],denies:[],mainTxt:'',kak:'',nou:'',shi:'',hon:''};
 (function(){var h='';CHECKS.forEach(function(g,gi){h+='<div class="cgrp"><h3>'+g.g+'</h3>';
   g.items.forEach(function(it,ii){h+='<label class="chk"><input type="checkbox" id="k'+gi+'_'+ii+'" onchange="calc()"><span class="ct">'+it.t+'</span><span class="tag '+it.tier+'">'+(it.tier==='k'?'確定':it.tier==='n'?'濃厚':'示唆')+'</span><span class="cd">'+it.d+'</span></label>';});
@@ -186,6 +190,8 @@ function nearest(v,t){var b=1,bd=1e9;for(var s in t){var d=Math.abs(t[s]-v);if(d
 
 function calc(){
   var g=parseInt(document.getElementById('tg').value)||0,ests=[];
+  var vAt=document.getElementById('vAt');
+  if(c.at>0&&g>0){var ra=g/c.at,sa=nearest(ra,AT),ada=c.at>=5;vAt.innerHTML='1/'+Math.round(ra)+' → 設定'+sa+'相当'+(ada?'':'（参考）');vAt.style.color=ada&&sa>=4?'#d9a93a':'#8f8a86';if(ada)ests.push(sa);}else{vAt.textContent='—';vAt.style.color='#8f8a86';}
   var vEp=document.getElementById('vEp');
   if(c.ep>0&&g>0){var r=g/c.ep,s=nearest(r,EP),ad=c.ep>=3;vEp.innerHTML='1/'+Math.round(r)+' → 設定'+s+'相当'+(ad?'':'（参考）');vEp.style.color=ad&&s>=4?'#d9a93a':'#8f8a86';if(ad)ests.push(s);}else{vEp.textContent='—';vEp.style.color='#8f8a86';}
   var vOo=document.getElementById('vOo');
@@ -270,6 +276,7 @@ function outText(){
   var chk=cg.length?cg.join('\n'):'・なし';
   var g=parseInt(document.getElementById('tg').value)||0;
   var fr=['・総G：'+(document.getElementById('tg').value||'-')];
+  if(g>0&&c.at>0){var ra=g/c.at,sa=nearest(ra,AT);fr.push('・AT初当り：'+c.at+'回　1/'+Math.round(ra)+'（設定'+sa+'相当'+(c.at>=5?'':'・参考')+'）');}else fr.push('・AT初当り：'+c.at+'回');
   if(g>0&&c.ep>0){var r=g/c.ep,s=nearest(r,EP);fr.push('・エピボ：'+c.ep+'回　1/'+Math.round(r)+'（設定'+s+'相当'+(c.ep>=3?'':'・参考')+'）');}
   else fr.push('・エピボ：'+c.ep+'回');
   if(g>0&&c.oo>0){var r2=g/c.oo,s2=nearest(r2,OO);fr.push('・大喰い：'+c.oo+'回　1/'+Math.round(r2)+'（設定'+s2+'相当'+(c.oo>=3?'':'・参考')+'）');}
@@ -293,9 +300,9 @@ function exportResult(){
 }
 function resetAll(){
   var anyChk=document.querySelectorAll('#checks input:checked').length>0;
-  var hasData=(parseInt(document.getElementById('tg').value)||0)>0||c.ep||c.oo||c.cz||c.c1||anyChk;
+  var hasData=(parseInt(document.getElementById('tg').value)||0)>0||c.ep||c.oo||c.cz||c.c1||c.at||anyChk;
   var last=hasData?outText():'';
-  c={ep:0,oo:0,cz:0,c1:0};['ep','oo','cz','c1'].forEach(function(k){document.getElementById(k).textContent='0';});
+  c={ep:0,oo:0,cz:0,c1:0,at:0};['ep','oo','cz','c1','at'].forEach(function(k){document.getElementById(k).textContent='0';});
   document.getElementById('tg').value='';
   document.querySelectorAll('#checks input').forEach(function(x){x.checked=false;});
   calc();
@@ -304,7 +311,7 @@ function resetAll(){
   else{ob.value='';ob.style.display='none';msg.textContent='';}
 }
 function save(){try{var ck=[];document.querySelectorAll('#checks input:checked').forEach(function(x){ck.push(x.id);});localStorage.setItem('guru_judge_v1',JSON.stringify({tg:document.getElementById('tg').value,c:c,ck:ck}));}catch(e){}}
-function load(){try{var raw=localStorage.getItem('guru_judge_v1');if(!raw)return;var data=JSON.parse(raw);if(data.tg!=null)document.getElementById('tg').value=data.tg;if(data.c){c.ep=data.c.ep||0;c.oo=data.c.oo||0;c.cz=data.c.cz||0;c.c1=data.c.c1||0;}['ep','oo','cz','c1'].forEach(function(k){document.getElementById(k).textContent=c[k];});if(data.ck){data.ck.forEach(function(id){var el=document.getElementById(id);if(el)el.checked=true;});}}catch(e){}}
+function load(){try{var raw=localStorage.getItem('guru_judge_v1');if(!raw)return;var data=JSON.parse(raw);if(data.tg!=null)document.getElementById('tg').value=data.tg;if(data.c){c.ep=data.c.ep||0;c.oo=data.c.oo||0;c.cz=data.c.cz||0;c.c1=data.c.c1||0;c.at=data.c.at||0;}['ep','oo','cz','c1','at'].forEach(function(k){document.getElementById(k).textContent=c[k];});if(data.ck){data.ck.forEach(function(id){var el=document.getElementById(id);if(el)el.checked=true;});}}catch(e){}}
 load();calc();
 </script>
 </body>
